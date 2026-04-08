@@ -350,8 +350,8 @@ class TestCredentialsProviderAccountIdentifier:
     """Test account_identifier population in both OAuth and PAT paths."""
 
     @pytest.mark.asyncio
-    async def test_oauth_extracts_identifier_from_jwt_claims(self):
-        """OAuth path extracts account_identifier from JWT claims."""
+    async def test_oauth_fetches_identifier_from_admin_api(self):
+        """OAuth path fetches account_identifier from Admin API."""
         mock_settings = DbtMcpSettings.model_construct(
             dbt_host="cloud.getdbt.com",
             dbt_prod_env_id=123,
@@ -369,49 +369,7 @@ class TestCredentialsProviderAccountIdentifier:
         mock_dbt_context.prod_environment.id = 123
         mock_decoded_token = MagicMock()
         mock_decoded_token.access_token_response.access_token = "mock_token"
-        mock_decoded_token.decoded_claims = {
-            "sub": "789",
-            "https://dbt.com/account_identifier": "ab123",
-        }
-        mock_dbt_context.decoded_access_token = mock_decoded_token
-
-        with (
-            patch(
-                "dbt_mcp.config.credentials.get_dbt_platform_context",
-                return_value=mock_dbt_context,
-            ),
-            patch(
-                "dbt_mcp.config.credentials.OAuthTokenProvider"
-            ) as mock_token_provider,
-            patch("dbt_mcp.config.settings.validate_dbt_cli_settings", return_value=[]),
-        ):
-            mock_token_provider.create = AsyncMock(return_value=MagicMock())
-
-            settings, _ = await credentials_provider.get_credentials()
-
-            assert settings.account_identifier == "ab123"
-
-    @pytest.mark.asyncio
-    async def test_oauth_falls_back_to_admin_api(self):
-        """OAuth path falls back to Admin API when JWT claim is missing."""
-        mock_settings = DbtMcpSettings.model_construct(
-            dbt_host="cloud.getdbt.com",
-            dbt_prod_env_id=123,
-            dbt_account_id=456,
-            dbt_token=None,
-        )
-
-        credentials_provider = CredentialsProvider(mock_settings)
-
-        mock_dbt_context = MagicMock()
-        mock_dbt_context.account_id = 456
-        mock_dbt_context.host_prefix = "ab123"
-        mock_dbt_context.user_id = 789
-        mock_dbt_context.dev_environment.id = 111
-        mock_dbt_context.prod_environment.id = 123
-        mock_decoded_token = MagicMock()
-        mock_decoded_token.access_token_response.access_token = "mock_token"
-        mock_decoded_token.decoded_claims = {"sub": "789"}  # No identifier claim
+        mock_decoded_token.decoded_claims = {}
         mock_dbt_context.decoded_access_token = mock_decoded_token
 
         with (
@@ -431,9 +389,9 @@ class TestCredentialsProviderAccountIdentifier:
         ):
             mock_token_provider.create = AsyncMock(return_value=MagicMock())
 
-            settings, _ = await credentials_provider.get_credentials()
+            await credentials_provider.get_credentials()
 
-            assert settings.account_identifier == "ab123"
+            assert credentials_provider.account_identifier == "ab123"
 
     @pytest.mark.asyncio
     async def test_pat_fetches_identifier_from_admin_api(self):
@@ -455,9 +413,9 @@ class TestCredentialsProviderAccountIdentifier:
                 return_value={"id": 456, "identifier": "ab123"},
             ),
         ):
-            settings, _ = await credentials_provider.get_credentials()
+            await credentials_provider.get_credentials()
 
-            assert settings.account_identifier == "ab123"
+            assert credentials_provider.account_identifier == "ab123"
 
     @pytest.mark.asyncio
     async def test_api_failure_does_not_break_credentials(self):
@@ -479,7 +437,7 @@ class TestCredentialsProviderAccountIdentifier:
                 side_effect=Exception("API error"),
             ),
         ):
-            settings, token_provider = await credentials_provider.get_credentials()
+            _, token_provider = await credentials_provider.get_credentials()
 
-            assert settings.account_identifier is None
+            assert credentials_provider.account_identifier is None
             assert token_provider is not None

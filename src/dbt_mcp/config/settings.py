@@ -55,7 +55,6 @@ class DbtMcpSettings(BaseSettings):
         None, alias="MULTICELL_ACCOUNT_PREFIX"
     )  # legacy support
     host_prefix: str | None = Field(None, alias="DBT_HOST_PREFIX")
-    account_identifier: str | None = None
     dbt_lsp_path: str | None = Field(None, alias="DBT_LSP_PATH")
 
     # dbt CLI settings

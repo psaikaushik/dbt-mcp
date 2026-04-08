@@ -52,10 +52,10 @@ class TestUsageTracker:
             dbt_user_id=3,
             actual_host="test.dbt.com",
             actual_host_prefix="prefix",
-            account_identifier="ab123",
         )
 
         mock_credentials_provider = MockCredentialsProvider(mock_settings)
+        mock_credentials_provider.account_identifier = "ab123"
 
         tracker = DefaultUsageTracker(
             credentials_provider=mock_credentials_provider,
@@ -96,7 +96,6 @@ class TestUsageTracker:
         mock_settings = DbtMcpSettings.model_construct(
             do_not_track=None,
             send_anonymous_usage_data=None,
-            account_identifier=None,
         )
 
         tracker = DefaultUsageTracker(

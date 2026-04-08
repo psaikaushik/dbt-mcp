@@ -152,14 +152,16 @@ class CredentialsProvider:
         self.settings = settings
         self.token_provider: TokenProvider | None = None
         self.authentication_method: AuthenticationMethod | None = None
+        self.account_identifier: str | None = None
 
-    async def _fetch_account_identifier(self) -> None:
-        """Fetch account identifier from the Admin API. Fails silently."""
+    async def _resolve_account_identifier(self) -> None:
+        """Fetch and store the account identifier from the Admin API.
+
+        Fails silently — account_identifier remains None on error.
+        """
         if not self.settings.dbt_account_id or not self.settings.actual_host:
             return
         try:
-            # Imported here to avoid circular import:
-            # credentials → config_providers.admin_api → credentials
             from dbt_mcp.config.config_providers.admin_api import (
                 DefaultAdminApiConfigProvider,
             )
@@ -167,7 +169,7 @@ class CredentialsProvider:
 
             admin_client = DbtAdminAPIClient(DefaultAdminApiConfigProvider(self))
             account_data = await admin_client.get_account(self.settings.dbt_account_id)
-            self.settings.account_identifier = account_data.get("identifier")
+            self.account_identifier = account_data.get("identifier")
         except Exception as e:
             logger.warning(f"Failed to fetch account identifier: {e}")
 
@@ -238,15 +240,7 @@ class CredentialsProvider:
                 context_manager=dbt_platform_context_manager,
             )
             self.token_provider = token_provider
-
-            # Try to resolve account identifier from JWT claims
-            self.settings.account_identifier = (
-                dbt_platform_context.decoded_access_token.decoded_claims.get(
-                    "https://dbt.com/account_identifier"
-                )
-            )
-            if not self.settings.account_identifier:
-                await self._fetch_account_identifier()
+            await self._resolve_account_identifier()
 
             # Only validate CLI settings here — platform settings were already
             # checked at the top of get_credentials() and the OAuth flow has
@@ -262,7 +256,7 @@ class CredentialsProvider:
             self._log_settings()
             return self.settings, self.token_provider
         self.token_provider = StaticTokenProvider(token=self.settings.dbt_token)
-        await self._fetch_account_identifier()
+        await self._resolve_account_identifier()
         validate_settings(self.settings)
         self.authentication_method = AuthenticationMethod.ENV_VAR
         self._log_settings()
