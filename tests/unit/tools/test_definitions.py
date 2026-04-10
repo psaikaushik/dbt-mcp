@@ -56,14 +56,18 @@ class TestMetaPassthrough:
         meta = {"ui": {"resourceUri": "ui://test/app.html"}}
         tool = _make_tool(meta=meta)
 
-        internal = tool.to_fastmcp_internal_tool()
+        internal = tool.to_fastmcp_internal_tool
         assert internal.meta == meta
 
     def test_to_fastmcp_internal_tool_none_meta(self):
         tool = _make_tool()
 
-        internal = tool.to_fastmcp_internal_tool()
+        internal = tool.to_fastmcp_internal_tool
         assert internal.meta is None
+
+    def test_to_fastmcp_internal_tool_is_cached(self):
+        tool = _make_tool()
+        assert tool.to_fastmcp_internal_tool is tool.to_fastmcp_internal_tool
 
     def test_register_tools_passes_meta(self, mock_fastmcp):
         mock_mcp, _ = mock_fastmcp

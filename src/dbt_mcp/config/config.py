@@ -92,7 +92,6 @@ class Config:
     admin_api_config_provider: DefaultAdminApiConfigProvider | None
     credentials_provider: CredentialsProvider
     lsp_config: LspConfig | None
-    multi_project_enabled: bool = False
 
 
 def load_config(enable_proxied_tools: bool = True) -> Config:
@@ -206,5 +205,4 @@ def load_config(enable_proxied_tools: bool = True) -> Config:
         admin_api_config_provider=admin_api_config_provider,
         credentials_provider=credentials_provider,
         lsp_config=lsp_config,
-        multi_project_enabled=settings.multi_project_enabled,
     )

@@ -17,6 +17,7 @@ from dbt_mcp.dbt_cli.tools import register_dbt_cli_tools
 from dbt_mcp.dbt_codegen.tools import register_dbt_codegen_tools
 from dbt_mcp.discovery.tools import register_discovery_tools
 from dbt_mcp.discovery.tools_multiproject import register_multiproject_discovery_tools
+from dbt_mcp.dispatch.tool_dispatcher2 import ToolDispatcher
 from dbt_mcp.errors.common import ConfigurationError
 from dbt_mcp.lsp.providers.local_lsp_client_provider import LocalLSPClientProvider
 from dbt_mcp.lsp.providers.local_lsp_connection_provider import (
@@ -35,6 +36,7 @@ from dbt_mcp.tracking.tracking import DefaultUsageTracker, ToolCalledEvent, Usag
 logger = logging.getLogger(__name__)
 
 
+# TODO: move this into a separate file
 class DbtMCP(FastMCP):
     def __init__(
         self,
@@ -115,7 +117,7 @@ async def app_lifespan(server: FastMCP[Any]) -> AsyncIterator[bool | None]:
         # this avoids anyio cancel scope violations (see issue #498)
         if (
             server.config.proxied_tool_config_provider
-            and not server.config.multi_project_enabled
+            and False  # TODO: re-enable proxied tools
         ):
             logger.info("Registering proxied tools")
             await register_proxied_tools(
@@ -191,8 +193,9 @@ async def register_multi_project_dbt_mcp(dbt_mcp: DbtMCP, config: Config) -> Non
         )
 
 
-async def create_dbt_mcp(config: Config) -> DbtMCP:
-    dbt_mcp = DbtMCP(
+# TODO: update the project selection UI to allow for multiple projects
+async def create_dbt_mcp(config: Config) -> FastMCP:
+    multi_project_dbt_mcp = DbtMCP(
         config=config,
         usage_tracker=DefaultUsageTracker(
             credentials_provider=config.credentials_provider,
@@ -202,13 +205,24 @@ async def create_dbt_mcp(config: Config) -> DbtMCP:
         lifespan=app_lifespan,
     )
 
-    if config.multi_project_enabled:
-        logger.info("DBT_MCP_MULTI_PROJECT_ENABLED=true -> Multi-project mode")
-        await register_multi_project_dbt_mcp(dbt_mcp, config)
-    else:
-        logger.info("Multi-project mode disabled -> Env-var mode")
-        await register_dbt_mcp_tools(dbt_mcp, config)
-    return dbt_mcp
+    single_project_dbt_mcp = DbtMCP(
+        config=config,
+        usage_tracker=DefaultUsageTracker(
+            credentials_provider=config.credentials_provider,
+            session_id=uuid.uuid4(),
+        ),
+        name="dbt",
+        lifespan=app_lifespan,
+    )
+
+    await register_multi_project_dbt_mcp(multi_project_dbt_mcp, config)
+    await register_dbt_mcp_tools(single_project_dbt_mcp, config)
+    tool_dispatcher = ToolDispatcher(
+        credentials_provider=config.credentials_provider,
+        multi_project_mcp=multi_project_dbt_mcp,
+        single_project_mcp=single_project_dbt_mcp,
+    )
+    return tool_dispatcher
 
 
 async def register_dbt_mcp_tools(dbt_mcp: DbtMCP, config: Config) -> None:

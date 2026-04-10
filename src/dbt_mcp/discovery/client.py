@@ -7,6 +7,8 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
 from dbt_mcp.config.config_providers import DiscoveryConfig
+from dbt_mcp.config.headers import DiscoveryHeadersProvider
+from dbt_mcp.discovery.endpoint import Endpoint
 from dbt_mcp.discovery.graphql import load_query
 from dbt_mcp.errors import InvalidParameterError, ToolCallError
 from dbt_mcp.errors.common import NotFoundError
@@ -351,6 +353,24 @@ class GraphQLQueries:
 
     # Lineage query
     GET_FULL_LINEAGE = load_query("get_full_lineage.gql")
+
+
+async def execute_query2(
+    endpoint: Endpoint[DiscoveryHeadersProvider],
+    query: str,
+    variables: dict,
+) -> dict:
+    url = endpoint.url
+    headers = endpoint.headers_provider.get_headers()
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            url=url,
+            json={"query": query, "variables": variables},
+            headers=headers,
+        )
+        response.raise_for_status()
+        return response.json()
 
 
 async def execute_query(
@@ -739,13 +759,13 @@ class ResourceDetailsFetcher:
     async def fetch_details(
         self,
         resource_type: AppliedResourceType,
+        *,
         config: DiscoveryConfig,
         name: str | None = None,
         unique_id: str | None = None,
     ) -> list[dict]:
         normalized_name = name.strip().lower() if name else None
         normalized_unique_id = unique_id.strip().lower() if unique_id else None
-        environment_id = config.environment_id
         if not normalized_name and not normalized_unique_id:
             raise InvalidParameterError("Either name or unique_id must be provided")
         if (
@@ -761,12 +781,18 @@ class ResourceDetailsFetcher:
             packages_result = await asyncio.gather(
                 execute_query(
                     self.GET_PACKAGES_QUERY,
-                    variables={"resource": "macro", "environmentId": environment_id},
+                    variables={
+                        "resource": "macro",
+                        "environmentId": config.environment_id,
+                    },
                     config=config,
                 ),
                 execute_query(
                     self.GET_PACKAGES_QUERY,
-                    variables={"resource": "model", "environmentId": environment_id},
+                    variables={
+                        "resource": "model",
+                        "environmentId": config.environment_id,
+                    },
                     config=config,
                 ),
             )
@@ -788,7 +814,7 @@ class ResourceDetailsFetcher:
             unique_ids = [normalized_unique_id]
         query = self.GQL_QUERIES[resource_type]
         variables = {
-            "environmentId": environment_id,
+            "environmentId": config.environment_id,
             "filter": {
                 "uniqueIds": unique_ids,
                 "types": [self.RESOURCE_TYPE_TO_GQL_TYPE[resource_type]],

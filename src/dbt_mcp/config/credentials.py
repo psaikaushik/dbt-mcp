@@ -185,6 +185,7 @@ class CredentialsProvider:
         logger.info(f"Settings: {settings}")
 
     async def get_credentials(self) -> "tuple[DbtMcpSettings, TokenProvider]":
+        # TODO: imports should be at the top of the file
         from dbt_mcp.config.settings import (
             _build_dbt_platform_url,
             validate_dbt_cli_settings,

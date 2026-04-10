@@ -101,9 +101,6 @@ class DbtMcpSettings(BaseSettings):
         None, alias="DBT_SEND_ANONYMOUS_USAGE_STATS"
     )
 
-    # Multi-project settings
-    multi_project_enabled: bool = Field(False, alias="DBT_MCP_MULTI_PROJECT_ENABLED")
-
     # Semantic layer settings
     sl_metrics_related_max: int = Field(
         10, alias="DBT_MCP_SL_METRICS_RELATED_MAX", ge=0

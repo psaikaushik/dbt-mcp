@@ -139,30 +139,36 @@ async def get_all_models(
     context: MultiProjectDiscoveryToolContext,
     project_id: int = PROJECT_ID_FIELD,
 ) -> list[dict]:
+    # TODO: push code into fetchers
     config = await context.config_provider.get_config(project_id=project_id)
     return await context.models_fetcher.fetch_models(config=config)
 
 
-@dbt_mcp_tool(
-    description=get_prompt("discovery/get_model_details"),
-    title="Get Model Details",
-    read_only_hint=True,
-    destructive_hint=False,
-    idempotent_hint=True,
-)
-async def get_model_details(
-    context: MultiProjectDiscoveryToolContext,
-    project_id: int = PROJECT_ID_FIELD,
-    name: str | None = NAME_FIELD,
-    unique_id: str | None = UNIQUE_ID_FIELD,
-) -> list[dict]:
-    config = await context.config_provider.get_config(project_id=project_id)
-    return await context.resource_details_fetcher.fetch_details(
-        resource_type=AppliedResourceType.MODEL,
-        unique_id=unique_id,
-        name=name,
-        config=config,
-    )
+# @dbt_mcp_tool(
+#     description=get_prompt("discovery/get_model_details"),
+#     title="Get Model Details",
+#     read_only_hint=True,
+#     destructive_hint=False,
+#     idempotent_hint=True,
+# )
+# async def get_model_details(
+#     context: MultiProjectDiscoveryToolContext,
+#     project_id: int = PROJECT_ID_FIELD,
+#     name: str | None = NAME_FIELD,
+#     unique_id: str | None = UNIQUE_ID_FIELD,
+# ) -> list[dict]:
+#     config = await context.config_provider.get_config(project_id=project_id)
+#     environment_id = context.environment_id
+#     return await context.resource_details_fetcher.fetch_details(
+#         resource_type=AppliedResourceType.MODEL,
+#         environment_id=environment_id,
+#         endpoint=Endpoint(
+#             url=config.url,
+#             headers_provider=config.headers_provider,
+#         ),
+#         unique_id=unique_id,
+#         name=name,
+#     )
 
 
 @dbt_mcp_tool(
@@ -507,7 +513,7 @@ async def get_test_details(
 MULTIPROJECT_DISCOVERY_TOOLS = [
     get_mart_models,
     get_all_models,
-    get_model_details,
+    # get_model_details,
     get_model_parents,
     get_model_children,
     get_model_health,
@@ -539,6 +545,43 @@ def register_multiproject_discovery_tools(
         return MultiProjectDiscoveryToolContext(
             config_provider=config_provider,
         )
+
+    # [
+    #     GenericToolDefinition(
+    #         fn=partial(tool.fn, project_id=1),
+    #         description=tool.description,
+    #         name_enum=tool.name_enum,
+    #         name=tool.name,
+    #         title=tool.title,
+    #         annotations=ToolAnnotations(
+    #             title=tool.title,
+    #             readOnlyHint=tool.annotations.readOnlyHint
+    #             if tool.annotations
+    #             else None,
+    #             destructiveHint=tool.annotations.destructiveHint
+    #             if tool.annotations
+    #             else None,
+    #             idempotentHint=tool.annotations.idempotentHint
+    #             if tool.annotations
+    #             else None,
+    #             openWorldHint=tool.annotations.openWorldHint
+    #             if tool.annotations
+    #             else None,
+    #         ),
+    #         structured_output=tool.structured_output,
+    #         meta=tool.meta,
+    #     )
+    #     for tool in MULTIPROJECT_DISCOVERY_TOOLS
+    # ]
+    # tool = Tool.from_function(
+    #     fn=new_fn,
+    #     name=get_mart_models.name,
+    #     title=get_mart_models.title,
+    #     description=get_mart_models.description,
+    #     annotations=get_mart_models.annotations,
+    #     structured_output=get_mart_models.structured_output,
+    #     meta=get_mart_models.meta,
+    # )
 
     register_tools(
         dbt_mcp,
