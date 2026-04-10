@@ -17,7 +17,7 @@ from dbt_mcp.dbt_cli.tools import register_dbt_cli_tools
 from dbt_mcp.dbt_codegen.tools import register_dbt_codegen_tools
 from dbt_mcp.discovery.tools import register_discovery_tools
 from dbt_mcp.discovery.tools_multiproject import register_multiproject_discovery_tools
-from dbt_mcp.dispatch.tool_dispatcher2 import ToolDispatcher
+from dbt_mcp.dispatch.tool_dispatcher import ToolDispatcher
 from dbt_mcp.errors.common import ConfigurationError
 from dbt_mcp.lsp.providers.local_lsp_client_provider import LocalLSPClientProvider
 from dbt_mcp.lsp.providers.local_lsp_connection_provider import (
