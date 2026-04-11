@@ -6,6 +6,7 @@ from mcp.types import ContentBlock
 from mcp.types import Tool as MCPTool
 
 from dbt_mcp.config.credentials import CredentialsProvider
+from dbt_mcp.config.settings import DbtMcpSettings
 
 
 # TODO: consolidate this with DbtMCP class
@@ -26,7 +27,7 @@ class ToolDispatcher(FastMCP):
         self.multi_project_mcp = multi_project_mcp
         self.single_project_mcp = single_project_mcp
 
-    def _is_multi_project(self, settings: Any) -> bool:
+    def _is_multi_project(self, settings: DbtMcpSettings) -> bool:
         return bool(
             settings.dbt_project_ids is not None and len(settings.dbt_project_ids) > 0
         )

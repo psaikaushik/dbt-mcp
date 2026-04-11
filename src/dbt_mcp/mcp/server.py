@@ -188,7 +188,6 @@ async def register_multi_project_dbt_mcp(dbt_mcp: DbtMCP, config: Config) -> Non
         )
 
 
-# TODO: update the project selection UI to allow for multiple projects
 async def create_dbt_mcp(config: Config) -> FastMCP:
     multi_project_dbt_mcp = DbtMCP(
         config=config,
