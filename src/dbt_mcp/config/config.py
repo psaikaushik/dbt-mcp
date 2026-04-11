@@ -134,20 +134,17 @@ def load_config(enable_proxied_tools: bool = True) -> Config:
             credentials_provider=credentials_provider,
         )
         admin_client = DbtAdminAPIClient(admin_api_config_provider)
-        if settings.dbt_account_id:
-            multi_project_discovery_config_provider = (
-                MultiProjectDiscoveryConfigProvider(
-                    credentials_provider=credentials_provider,
-                    admin_client=admin_client,
-                )
+        multi_project_discovery_config_provider = MultiProjectDiscoveryConfigProvider(
+            credentials_provider=credentials_provider,
+            admin_client=admin_client,
+        )
+        multi_project_semantic_layer_config_provider = (
+            MultiProjectSemanticLayerConfigProvider(
+                credentials_provider=credentials_provider,
+                admin_client=admin_client,
+                metrics_related_max=settings.sl_metrics_related_max,
             )
-            multi_project_semantic_layer_config_provider = (
-                MultiProjectSemanticLayerConfigProvider(
-                    credentials_provider=credentials_provider,
-                    admin_client=admin_client,
-                    metrics_related_max=settings.sl_metrics_related_max,
-                )
-            )
+        )
 
     dbt_cli_config = None
     if settings.dbt_project_dir and settings.dbt_path:

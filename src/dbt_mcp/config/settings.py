@@ -56,6 +56,9 @@ class DbtMcpSettings(BaseSettings):
     )  # legacy support
     host_prefix: str | None = Field(None, alias="DBT_HOST_PREFIX")
     dbt_lsp_path: str | None = Field(None, alias="DBT_LSP_PATH")
+    dbt_project_ids: Annotated[list[int] | None, NoDecode] = Field(
+        None, alias="DBT_PROJECT_IDS"
+    )
 
     # dbt CLI settings
     dbt_project_dir: str | None = Field(None, alias="DBT_PROJECT_DIR")
@@ -287,6 +290,15 @@ class DbtMcpSettings(BaseSettings):
     def parse_enable_tools(cls, env_var: str | None) -> list[ToolName] | None:
         return _parse_tool_list(env_var, "DBT_MCP_ENABLE_TOOLS")
 
+    @field_validator("dbt_project_ids", mode="before")
+    @classmethod
+    def parse_project_ids(cls, v: str | list | None) -> list[int] | None:
+        if v is None:
+            return None
+        if isinstance(v, list):
+            return [int(i) for i in v]
+        return [int(i.strip()) for i in str(v).split(",") if i.strip()]
+
     @model_validator(mode="after")
     def auto_disable(self) -> "DbtMcpSettings":
         """Auto-disable features based on required settings."""
@@ -439,9 +451,9 @@ def validate_dbt_platform_settings(settings: DbtMcpSettings) -> list[str]:
             errors.append(
                 "DBT_HOST environment variable is required when semantic layer, discovery, SQL or admin API tools are enabled."
             )
-        if not settings.actual_prod_environment_id:
+        if not settings.actual_prod_environment_id and not settings.dbt_project_ids:
             errors.append(
-                "DBT_PROD_ENV_ID environment variable is required when semantic layer, discovery, SQL or admin API tools are enabled."
+                "DBT_PROD_ENV_ID or DBT_PROJECT_IDS environment variable is required when semantic layer, discovery, SQL or admin API tools are enabled."
             )
         if not settings.dbt_token:
             errors.append(

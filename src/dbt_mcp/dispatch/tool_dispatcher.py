@@ -26,16 +26,21 @@ class ToolDispatcher(FastMCP):
         self.multi_project_mcp = multi_project_mcp
         self.single_project_mcp = single_project_mcp
 
+    def _is_multi_project(self, settings: Any) -> bool:
+        return bool(
+            settings.dbt_project_ids is not None and len(settings.dbt_project_ids) > 0
+        )
+
     async def call_tool(
         self, name: str, arguments: dict[str, Any]
     ) -> Sequence[ContentBlock] | dict[str, Any]:
         settings, _ = await self.credentials_provider.get_credentials()
-        if settings.actual_prod_environment_id is not None:
-            return await self.single_project_mcp.call_tool(name, arguments)
-        return await self.multi_project_mcp.call_tool(name, arguments)
+        if self._is_multi_project(settings):
+            return await self.multi_project_mcp.call_tool(name, arguments)
+        return await self.single_project_mcp.call_tool(name, arguments)
 
     async def list_tools(self) -> list[MCPTool]:
         settings, _ = await self.credentials_provider.get_credentials()
-        if settings.actual_prod_environment_id is not None:
-            return await self.single_project_mcp.list_tools()
-        return await self.multi_project_mcp.list_tools()
+        if self._is_multi_project(settings):
+            return await self.multi_project_mcp.list_tools()
+        return await self.single_project_mcp.list_tools()
