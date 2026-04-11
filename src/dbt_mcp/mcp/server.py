@@ -114,7 +114,7 @@ async def app_lifespan(server: FastMCP[Any]) -> AsyncIterator[bool | None]:
         # register proxied tools inside the app lifespan to ensure the StreamableHTTP client (specific
         # to dbt Platform connection) lives on the same event loop as the running server
         # this avoids anyio cancel scope violations (see issue #498)
-        if (
+        if (  # TODO: make proxied tools, admin tools, and other? multi-project
             server.config.proxied_tool_config_provider
             and False  # TODO: re-enable proxied tools
         ):

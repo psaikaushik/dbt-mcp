@@ -761,18 +761,12 @@ class ResourceDetailsFetcher:
             packages_result = await asyncio.gather(
                 execute_query(
                     self.GET_PACKAGES_QUERY,
-                    variables={
-                        "resource": "macro",
-                        "environmentId": environment_id,
-                    },
+                    variables={"resource": "macro", "environmentId": environment_id},
                     config=config,
                 ),
                 execute_query(
                     self.GET_PACKAGES_QUERY,
-                    variables={
-                        "resource": "model",
-                        "environmentId": environment_id,
-                    },
+                    variables={"resource": "model", "environmentId": environment_id},
                     config=config,
                 ),
             )
