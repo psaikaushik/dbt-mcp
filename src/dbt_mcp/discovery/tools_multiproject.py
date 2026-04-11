@@ -145,6 +145,28 @@ async def get_all_models(
 
 
 @dbt_mcp_tool(
+    description=get_prompt("discovery/get_model_details"),
+    title="Get Model Details",
+    read_only_hint=True,
+    destructive_hint=False,
+    idempotent_hint=True,
+)
+async def get_model_details(
+    context: MultiProjectDiscoveryToolContext,
+    project_id: int = PROJECT_ID_FIELD,
+    name: str | None = NAME_FIELD,
+    unique_id: str | None = UNIQUE_ID_FIELD,
+) -> list[dict]:
+    config = await context.config_provider.get_config(project_id=project_id)
+    return await context.resource_details_fetcher.fetch_details(
+        resource_type=AppliedResourceType.MODEL,
+        unique_id=unique_id,
+        name=name,
+        config=config,
+    )
+
+
+@dbt_mcp_tool(
     description=get_prompt("discovery/get_model_parents"),
     title="Get Model Parents",
     read_only_hint=True,
@@ -486,7 +508,7 @@ async def get_test_details(
 MULTIPROJECT_DISCOVERY_TOOLS = [
     get_mart_models,
     get_all_models,
-    # get_model_details,
+    get_model_details,
     get_model_parents,
     get_model_children,
     get_model_health,

@@ -189,6 +189,7 @@ async def register_multi_project_dbt_mcp(dbt_mcp: DbtMCP, config: Config) -> Non
 
 
 async def create_dbt_mcp(config: Config) -> FastMCP:
+    # TODO: consolidate this
     multi_project_dbt_mcp = DbtMCP(
         config=config,
         usage_tracker=DefaultUsageTracker(

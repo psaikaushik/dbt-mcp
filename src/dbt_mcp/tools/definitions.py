@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from functools import cached_property, partial
+from functools import partial
 from typing import Any
 
 from mcp.server.fastmcp.tools.base import Tool
@@ -27,7 +27,6 @@ class GenericToolDefinition[NameEnum: Enum]:
     def get_name(self) -> NameEnum:
         return self.name_enum((self.name or self.fn.__name__).lower())
 
-    @cached_property
     def to_fastmcp_internal_tool(self) -> Tool:
         return Tool.from_function(
             fn=self.fn,
