@@ -129,7 +129,7 @@ async def app_lifespan(server: FastMCP[Any]) -> AsyncIterator[bool | None]:
         # this avoids anyio cancel scope violations (see issue #498)
         if (  # TODO: make proxied tools, admin tools, and other? multi-project
             server.config.proxied_tool_config_provider
-            and False  # TODO: re-enable proxied tools
+            and not await server._is_multi_project()
         ):
             logger.info("Registering proxied tools")
             await register_proxied_tools(
@@ -203,27 +203,6 @@ async def register_multi_project_dbt_mcp(dbt_mcp: FastMCP, config: Config) -> No
             enabled_toolsets=enabled_toolsets,
             disabled_toolsets=disabled_toolsets,
         )
-
-
-async def create_dbt_mcp(config: Config) -> FastMCP:
-    multi_project_dbt_mcp = FastMCP()
-    await register_multi_project_dbt_mcp(multi_project_dbt_mcp, config)
-
-    single_project_dbt_mcp = FastMCP()
-    await register_dbt_mcp_tools(single_project_dbt_mcp, config)
-
-    tool_dispatcher = DbtMCP(
-        name="dbt",
-        config=config,
-        usage_tracker=DefaultUsageTracker(
-            credentials_provider=config.credentials_provider,
-            session_id=uuid.uuid4(),
-        ),
-        lifespan=app_lifespan,
-        multi_project_mcp=multi_project_dbt_mcp,
-        single_project_mcp=single_project_dbt_mcp,
-    )
-    return tool_dispatcher
 
 
 async def register_dbt_mcp_tools(dbt_mcp: FastMCP, config: Config) -> None:
@@ -320,3 +299,24 @@ async def register_dbt_mcp_tools(dbt_mcp: FastMCP, config: Config) -> None:
             enabled_toolsets=enabled_toolsets,
             disabled_toolsets=disabled_toolsets,
         )
+
+
+async def create_dbt_mcp(config: Config) -> FastMCP:
+    multi_project_dbt_mcp = FastMCP()
+    await register_multi_project_dbt_mcp(multi_project_dbt_mcp, config)
+
+    single_project_dbt_mcp = FastMCP()
+    await register_dbt_mcp_tools(single_project_dbt_mcp, config)
+
+    tool_dispatcher = DbtMCP(
+        name="dbt",
+        config=config,
+        usage_tracker=DefaultUsageTracker(
+            credentials_provider=config.credentials_provider,
+            session_id=uuid.uuid4(),
+        ),
+        lifespan=app_lifespan,
+        multi_project_mcp=multi_project_dbt_mcp,
+        single_project_mcp=single_project_dbt_mcp,
+    )
+    return tool_dispatcher
