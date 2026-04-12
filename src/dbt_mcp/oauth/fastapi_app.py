@@ -210,8 +210,7 @@ def create_app(
                 page_size=100,
             )
             prod_environment, dev_environment = DbtAdminAPIClient.resolve_environments(
-                environments,
-                prod_environment_id=None,
+                environments
             )
         else:
             # Multiple projects: set selected_project_ids so the dispatcher routes

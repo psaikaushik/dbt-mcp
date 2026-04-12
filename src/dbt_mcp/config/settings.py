@@ -453,7 +453,11 @@ def validate_dbt_platform_settings(settings: DbtMcpSettings) -> list[str]:
             )
         if not settings.actual_prod_environment_id and not settings.dbt_project_ids:
             errors.append(
-                "DBT_PROD_ENV_ID environment variable is required when semantic layer, discovery, SQL or admin API tools are enabled."
+                "DBT_PROD_ENV_ID or DBT_PROJECT_IDS environment variable is required when semantic layer, discovery, SQL or admin API tools are enabled."
+            )
+        if settings.actual_prod_environment_id and settings.dbt_project_ids:
+            errors.append(
+                "DBT_PROD_ENV_ID and DBT_PROJECT_IDS environment variables cannot be set at the same time."
             )
         if not settings.dbt_token:
             errors.append(
