@@ -33,7 +33,6 @@ from dbt_mcp.tracking.tracking import DefaultUsageTracker, ToolCalledEvent, Usag
 logger = logging.getLogger(__name__)
 
 
-# TODO: move this into a separate file
 class DbtMCP(FastMCP):
     def __init__(
         self,
