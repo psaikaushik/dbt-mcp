@@ -20,7 +20,11 @@ from dbt_mcp.config.settings import (
 )
 from dbt_mcp.dbt_admin.client import DbtAdminAPIClient
 from dbt_mcp.dbt_cli.binary_type import BinaryType, detect_binary_type
-from dbt_mcp.lsp.lsp_binary_manager import LspBinaryInfo, dbt_lsp_binary_info
+from dbt_mcp.lsp.lsp_binary_manager import dbt_lsp_binary_info
+from dbt_mcp.lsp.providers.local_lsp_client_provider import LocalLSPClientProvider
+from dbt_mcp.lsp.providers.local_lsp_connection_provider import (
+    LocalLSPConnectionProvider,
+)
 from dbt_mcp.telemetry.logging import configure_logging
 from dbt_mcp.tools.tool_names import ToolName
 from dbt_mcp.tools.toolsets import Toolset
@@ -70,8 +74,8 @@ class DbtCodegenConfig:
 
 @dataclass
 class LspConfig:
-    project_dir: str
-    lsp_binary_info: LspBinaryInfo | None
+    local_lsp_connection_provider: LocalLSPConnectionProvider
+    lsp_client_provider: LocalLSPClientProvider
 
 
 @dataclass
@@ -182,10 +186,18 @@ def load_config(enable_proxied_tools: bool = True) -> Config:
     lsp_config = None
     if settings.dbt_project_dir:
         lsp_binary_info = dbt_lsp_binary_info(settings.dbt_lsp_path)
-        lsp_config = LspConfig(
-            project_dir=settings.dbt_project_dir,
-            lsp_binary_info=lsp_binary_info,
-        )
+        if lsp_binary_info:
+            local_lsp_connection_provider = LocalLSPConnectionProvider(
+                lsp_binary_info=lsp_binary_info,
+                project_dir=settings.dbt_project_dir,
+            )
+            lsp_client_provider = LocalLSPClientProvider(
+                lsp_connection_provider=local_lsp_connection_provider,
+            )
+            lsp_config = LspConfig(
+                local_lsp_connection_provider=local_lsp_connection_provider,
+                lsp_client_provider=lsp_client_provider,
+            )
 
     return Config(
         disable_tools=settings.disable_tools or [],
